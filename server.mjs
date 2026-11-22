@@ -19,11 +19,13 @@ function tcp(host, port, ms = 5000) {
 
 async function probe() {
   const out = { at: new Date().toISOString() };
-  try {
-    const r = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(8000) });
-    const j = await r.json();
-    out.egress = { ip: j.ip, country: j.country_code, country_name: j.country_name, city: j.city, org: j.org };
-  } catch (e) { out.egress = { error: String(e) }; }
+  out.egress = {};
+  for (const u of ['http://ip-api.com/json/?fields=status,country,countryCode,city,isp,org,query', 'https://ifconfig.co/json', 'https://ipapi.co/json/']) {
+    try {
+      const r = await fetch(u, { signal: AbortSignal.timeout(8000) });
+      out.egress[u] = await r.json();
+    } catch (e) { out.egress[u] = { error: String(e) }; }
+  }
   try { out.dns_example = await dns.lookup('example.com'); } catch (e) { out.dns_example = { error: String(e) }; }
   try { out.dns_region1 = await dns.lookup('region1.argotunnel.com'); } catch (e) { out.dns_region1 = { error: String(e) }; }
   out.tcp = [];
